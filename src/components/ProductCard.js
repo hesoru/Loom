@@ -1,57 +1,99 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { addToCart } from '../redux/cartSlice';
+import { useReduxCart } from '../hooks/useReduxCart';
 import { useNotification } from './NotificationProvider';
+import { getProductAttributes } from '../services/api';
 
 const ProductCard = ({ product }) => {
-  const dispatch = useDispatch();
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedAttributePrice, setSelectedAttributePrice] = useState(null);
+  const [productAttributes, setProductAttributes] = useState([]);
+  const [currentPrice, setCurrentPrice] = useState(product ? product.price : 0);
+  const { addItem } = useReduxCart();
   const { showNotification } = useNotification();
 
-  const handleAddToCart = () => {
-    if (!selectedSize) {
+  useEffect(() => {
+    const fetchProductAttributes = async () => {
+      try {
+        if (product && product._id) {
+          const attributesData = await getProductAttributes(product._id);
+          setProductAttributes(attributesData);
+        }
+      } catch (error) {
+        console.error('Error fetching product attributes:', error);
+      }
+    };
+    
+    fetchProductAttributes();
+  }, [product]);
+
+  const handleSizeSelect = (attributeId, attributeValue, price) => {
+    console.log('ProductCard - handleSizeSelect:', { attributeId, attributeValue, price });
+    setSelectedSize(attributeValue);
+    setSelectedAttributePrice(attributeId);
+    setCurrentPrice(price);
+  };
+
+  const handleAddToCart = async () => {
+    if (!selectedAttributePrice) {
       showNotification('Please select a size.', 'error');
       return;
     }
     
-    dispatch(addToCart({ ...product, quantity: 1, size: selectedSize }));
-    showNotification('Item added to cart!', 'success');
+    console.log('ProductCard - handleAddToCart - selectedAttributePrice:', selectedAttributePrice);
+    console.log('ProductCard - handleAddToCart - selectedAttributePrice type:', typeof selectedAttributePrice);
+    
+    try {
+      const payload = {
+        productAttributePriceId: selectedAttributePrice,
+        quantity: 1
+      };
+      
+      console.log('ProductCard - handleAddToCart - payload:', payload);
+      
+      await addItem(payload);
+      showNotification('Item added to cart!', 'success');
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+      showNotification('Failed to add item to cart.', 'error');
+    }
   };
 
   return (
     <div style={styles.cardWrapper}>
-      <Link to={`/product/${product.id}`} style={styles.cardLink}>
+      <Link to={`/products/${product._id}`} style={styles.cardLink}>
         <div style={styles.card}>
           <img src={product.image} alt={product.name} style={styles.image} />
           <div style={styles.content}>
             <h3 style={styles.title}>{product.name}</h3>
-            <p style={styles.price}>${product.price.toFixed(2)}</p>
+            <p style={styles.price}>
+              {selectedSize ? `$${currentPrice.toFixed(2)}` : 'Select Size'}
+            </p>
             <div style={styles.sizeContainer}>
-              {product.availableSizes.map((size) => (
+              {productAttributes.length > 0 && productAttributes.map((attrPrice) => (
                 <button
-                  key={size}
+                  key={attrPrice._id}
                   onClick={(e) => {
                     e.preventDefault();
-                    setSelectedSize(size);
+                    handleSizeSelect(attrPrice._id, attrPrice.attribute.attributeValue, attrPrice.price);
                   }}
                   style={{
                     ...styles.sizeButton,
-                    ...(selectedSize === size ? styles.selectedSize : {}),
+                    ...(selectedSize === attrPrice.attribute.attributeValue ? styles.selectedSize : {}),
                   }}
                 >
-                  {size}
+                  {attrPrice.attribute.attributeValue}
                 </button>
               ))}
             </div>
           </div>
         </div>
       </Link>
-        <div style={styles.actions}>
-          <button onClick={handleAddToCart} style={styles.addButton}>
-            Add to Cart
-          </button>
-        </div>
+      <div style={styles.actions}>
+        <button onClick={handleAddToCart} style={styles.addButton}>
+          Add to Cart
+        </button>
+      </div>
     </div>
   );
 };

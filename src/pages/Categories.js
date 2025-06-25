@@ -1,14 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
-import { products } from '../data/products';
+import { getProductsByCategory, getCategories } from '../services/api';
 
 const Categories = () => {
-  const categories = [...new Set(products.map(product => product.category))];
-  const [selectedCategory, setSelectedCategory] = useState(categories[0]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const filteredProducts = products.filter(
-    product => product.category === selectedCategory
-  );
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesData = await getCategories();
+        setCategories(categoriesData);
+        if (categoriesData.length > 0) {
+          setSelectedCategory(categoriesData[0].name);
+        }
+      } catch (err) {
+        setError('Failed to load categories');
+        console.error('Error fetching categories:', err);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Fetch products when selected category changes
+  useEffect(() => {
+    const fetchProductsByCategory = async () => {
+      if (!selectedCategory) return;
+      
+      setLoading(true);
+      try {
+        console.log(selectedCategory);
+        const productsData = await getProductsByCategory(selectedCategory);
+        setProducts(productsData);
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to load products');
+        setLoading(false);
+        console.error('Error fetching products:', err);
+      }
+    };
+
+    fetchProductsByCategory();
+  }, [selectedCategory]);
+
+  if (error) {
+    return <div style={styles.error}>{error}</div>;
+  }
 
   return (
     <div style={styles.container}>
@@ -17,24 +59,28 @@ const Categories = () => {
       <div style={styles.categoryButtons}>
         {categories.map(category => (
           <button
-            key={category}
+            key={category._id}
             style={{
               ...styles.categoryButton,
-              backgroundColor: selectedCategory === category ? '#9d7d63' : '#f8f9fa',
-              color: selectedCategory === category ? '#fff' : '#333',
+              backgroundColor: selectedCategory === category.name ? '#9d7d63' : '#f8f9fa',
+              color: selectedCategory === category.name ? '#fff' : '#333',
             }}
-            onClick={() => setSelectedCategory(category)}
+            onClick={() => setSelectedCategory(category.name)}
           >
-            {category}
+            {category.name}
           </button>
         ))}
       </div>
 
-      <div style={styles.productsGrid}>
-        {filteredProducts.map(product => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      {loading ? (
+        <div style={styles.loading}>Loading products...</div>
+      ) : (
+        <div style={styles.productsGrid}>
+          {products.map(product => (
+            <ProductCard key={product._id} product={product} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

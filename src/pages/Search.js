@@ -1,21 +1,31 @@
 import React, { useState } from 'react';
 import ProductCard from '../components/ProductCard';
-import { products } from '../data/products';
+import { searchProducts } from '../services/api';
 
 const Search = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
-    const results = products.filter(product =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setSearchResults(results);
-    setHasSearched(true);
+    if (!searchTerm.trim()) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const results = await searchProducts(searchTerm);
+      setSearchResults(results);
+      setHasSearched(true);
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to search products');
+      setLoading(false);
+      console.error('Error searching products:', err);
+    }
   };
 
   return (
@@ -35,7 +45,11 @@ const Search = () => {
         </button>
       </form>
 
-      {hasSearched && (
+      {error && <div style={styles.error}>{error}</div>}
+      
+      {loading && <div style={styles.loading}>Searching products...</div>}
+      
+      {hasSearched && !loading && (
         <div style={styles.results}>
           <h2 style={styles.resultsTitle}>
             {searchResults.length} result(s) found
@@ -43,7 +57,7 @@ const Search = () => {
           
           <div style={styles.productsGrid}>
             {searchResults.map(product => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard key={product._id} product={product} />
             ))}
           </div>
 

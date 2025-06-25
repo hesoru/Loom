@@ -1,11 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { products } from '../data/products';
+import { getProductsByCategory } from '../services/api';
 
 const Home = () => {
-  const featuredProducts = products.slice(0, 4);
-
+  const [bestSellers, setBestSellers] = useState([]);
+  const [bestSellersLoading, setBestSellersLoading] = useState(true);
+  const [bestSellersError, setBestSellersError] = useState(null);
+  
+  // Fetch Best Sellers products
+  useEffect(() => {
+    const fetchBestSellers = async () => {
+      try {
+        const data = await getProductsByCategory('Best Sellers');
+        // Shuffle the array and take 3 random products if there are more than 3
+        const shuffled = data.sort(() => 0.5 - Math.random());
+        const randomBestSellers = shuffled.slice(0, 3);
+        setBestSellers(randomBestSellers);
+        setBestSellersLoading(false);
+      } catch (err) {
+        console.error('Error fetching best sellers:', err);
+        setBestSellersError('Failed to load best sellers. Please try again.');
+        setBestSellersLoading(false);
+      }
+    };
+    
+    fetchBestSellers();
+  }, []);
+  
   return (
     <div style={styles.container}>
       <section style={styles.hero}>
@@ -16,12 +38,31 @@ const Home = () => {
         </Link>
       </section>
 
-      <section style={styles.featured}>
-        <h2 style={styles.sectionTitle}>Featured Products</h2>
-        <div style={styles.productsGrid}>
-          {featuredProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+      <section style={styles.bestSellers}>
+        <h2 style={styles.sectionTitle}>Best Sellers</h2>
+        {bestSellersLoading ? (
+          <div style={styles.loadingContainer}>
+            <p>Loading best sellers...</p>
+          </div>
+        ) : bestSellersError ? (
+          <div style={styles.errorContainer}>
+            <p>{bestSellersError}</p>
+          </div>
+        ) : (
+          <div style={styles.productsGrid}>
+            {bestSellers.length > 0 ? (
+              bestSellers.map(product => (
+                <ProductCard key={product._id} product={product} />
+              ))
+            ) : (
+              <p>No best sellers found.</p>
+            )}
+          </div>
+        )}
+        <div style={styles.viewAllContainer}>
+          <Link to="/category/Best Sellers" style={styles.viewAllButton}>
+            View All Best Sellers
+          </Link>
         </div>
       </section>
     </div>
@@ -29,8 +70,40 @@ const Home = () => {
 };
 
 const styles = {
+  loadingContainer: {
+    textAlign: 'center',
+    padding: '2rem',
+    fontSize: '1.2rem',
+  },
+  errorContainer: {
+    textAlign: 'center',
+    padding: '2rem',
+    color: 'red',
+    fontSize: '1.2rem',
+  },
   container: {
     padding: '2rem',
+  },
+  bestSellers: {
+    marginTop: '3rem',
+  },
+  viewAllContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: '1.5rem',
+  },
+  viewAllButton: {
+    display: 'inline-block',
+    padding: '0.75rem 1.5rem',
+    backgroundColor: '#4a4a4a',
+    color: 'white',
+    textDecoration: 'none',
+    borderRadius: '4px',
+    fontWeight: 'bold',
+    transition: 'background-color 0.2s',
+    ':hover': {
+      backgroundColor: '#333',
+    },
   },
   hero: {
     textAlign: 'center',

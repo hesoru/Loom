@@ -1,31 +1,122 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { addToCart } from '../redux/cartSlice';
-import { products } from '../data/products';
+import { getProductById, getProductAttributes } from '../services/api';
+import { useReduxCart } from '../hooks/useReduxCart';
 import { useNotification } from '../components/NotificationProvider';
+import { useSelector } from 'react-redux';
 
 const ProductDetails = () => {
   const { id } = useParams();
-  const dispatch = useDispatch();
+  const { addItem, updateItemQuantity } = useReduxCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedAttributePrice, setSelectedAttributePrice] = useState(null);
   const { showNotification } = useNotification();
+  
+  // Get cart items from Redux store
+  const cartItems = useSelector(state => state.cart.items);
+  const [existingCartItem, setExistingCartItem] = useState(null);
+  
+  const [product, setProduct] = useState(null);
+  const [attributes, setAttributes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPrice, setCurrentPrice] = useState(0);
 
-  const product = products.find(p => p.id === parseInt(id));
+  // Fetch product details
+  useEffect(() => {
+    const fetchProductDetails = async () => {
+      try {
+        console.log('Fetching product with ID:', id);
+        const productData = await getProductById(id);
+        console.log('Product data received:', productData);
+        setProduct(productData);
+        setCurrentPrice(productData.price);
+        
+        // Fetch product attributes
+        console.log('Fetching attributes for product ID:', id);
+        const attributesData = await getProductAttributes(id);
+        console.log('Attributes data received:', attributesData);
+        setAttributes(attributesData);
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to load product details');
+        setLoading(false);
+        console.error('Error fetching product details:', err);
+      }
+    };
 
-  if (!product) {
-    return <div>Product not found.</div>;
+    fetchProductDetails();
+  }, [id]);
+
+  // Update selected attribute price when size changes
+  useEffect(() => {
+    console.log('Selected size changed:', selectedSize);
+    console.log('Available attributes:', attributes);
+    
+    const attributePrice = attributes.find(attr => 
+      attr.attribute.attributeValue === selectedSize
+    );
+    
+    if (attributePrice) {
+      // Store just the ID, not the entire object
+      setSelectedAttributePrice(attributePrice._id);
+      setCurrentPrice(attributePrice.price);
+      
+      // Check if this item is already in the cart
+      const itemInCart = cartItems.find(item => 
+        item.productAttributePriceId === attributePrice._id
+      );
+      
+      if (itemInCart) {
+        console.log('Item already in cart:', itemInCart);
+        setExistingCartItem(itemInCart);
+        setQuantity(itemInCart.quantity); // Set initial quantity to match cart
+      } else {
+        setExistingCartItem(null);
+        setQuantity(1); // Reset quantity if not in cart
+      }
+    }
+  }, [selectedSize, attributes, cartItems]);
+
+  const handleSizeSelect = (attributeId, attributeValue, price) => {
+    console.log('Size selected:', { attributeId, attributeValue, price });
+    setSelectedSize(attributeValue);
+    setSelectedAttributePrice(attributeId); // Store just the ID
+    setCurrentPrice(price);
+  };
+
+  if (loading) {
+    return <div style={styles.loading}>Loading product details...</div>;
+  }
+
+  if (error || !product) {
+    return <div style={styles.error}>{error || 'Product not found.'}</div>;
   }
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
+    if (!selectedAttributePrice) {
       showNotification('Please select a size.', 'error');
       return;
     }
     
-    dispatch(addToCart({ ...product, quantity, size: selectedSize }));
-    showNotification('Item added to cart!', 'success');
+    if (existingCartItem) {
+      // Update quantity of existing item
+      console.log('Updating cart item quantity:', { itemId: existingCartItem._id, quantity });
+      updateItemQuantity({
+        itemId: existingCartItem._id,
+        quantity: quantity
+      });
+      showNotification('Cart updated!', 'success');
+    } else {
+      // Add new item to cart
+      console.log('Adding new item to cart:', { productAttributePriceId: selectedAttributePrice, quantity });
+      addItem({
+        productAttributePriceId: selectedAttributePrice,
+        quantity
+      });
+      showNotification('Item added to cart!', 'success');
+    }
   }
 
   return (
@@ -37,21 +128,22 @@ const ProductDetails = () => {
           <h1 style={styles.title}>{product.name}</h1>
           <p style={styles.category}>{product.category}</p>
           <p style={styles.description}>{product.description}</p>
-          <p style={styles.price}>${product.price.toFixed(2)}</p>
+          <p style={styles.price}>
+            {selectedSize ? `$${currentPrice.toFixed(2)}` : 'Select Size'}
+          </p>
           
           <div style={styles.sizeContainer}>
-            <p style={styles.sizeLabel}>Select Size:</p>
-            <div style={styles.sizeButtons}>
-              {product.availableSizes.map((size) => (
+           <div style={styles.sizeButtons}>
+              {attributes.map((attrPrice) => (
                 <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
+                  key={attrPrice._id}
+                  onClick={() => handleSizeSelect(attrPrice._id, attrPrice.attribute.attributeValue, attrPrice.price)}
                   style={{
                     ...styles.sizeButton,
-                    ...(selectedSize === size ? styles.selectedSize : {}),
+                    ...(selectedSize === attrPrice.attribute.attributeValue ? styles.selectedSize : {}),
                   }}
                 >
-                  {size}
+                  {attrPrice.attribute.attributeValue}
                 </button>
               ))}
             </div>
@@ -74,7 +166,7 @@ const ProductDetails = () => {
               </button>
             </div>
             <button onClick={handleAddToCart} style={styles.addButton}>
-              Add to Cart
+              {existingCartItem ? 'Update Cart' : 'Add to Cart'}
             </button>
           </div>
         </div>
