@@ -4,6 +4,15 @@ A comprehensive full-stack fashion e-commerce website featuring a modern React f
 
 ## Setup Instructions
 
+### Environment Configuration
+1. Copy the environment template:
+   ```bash
+   cp .env.example .env
+   ```
+2. Update `.env` with your secure values:
+   - `JWT_SECRET`: Use a strong, unique secret key for JWT token signing
+   - `MONGO_URI`: Your MongoDB connection string
+
 ### Local Development
 ```bash
 npm run dev  # Runs both frontend (port 3000) and backend (port 5000)

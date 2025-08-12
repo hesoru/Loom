@@ -3,8 +3,8 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// JWT Secret (should be in environment variables in production)
-const JWT_SECRET = 'loom-secret-key';
+// JWT Secret from environment variables
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-development';
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
