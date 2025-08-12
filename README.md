@@ -1,52 +1,63 @@
-# CPSC 455: Assignments
+# Loom (Fashion E-commerce Platform)
+
+### A comprehensive full-stack fashion e-commerce website featuring a modern React frontend with Redux state management, Express.js backend API, and MongoDB database. Built entirely with custom CSS without external UI libraries.
 
 ### By Helena Sokolovska
 
-## Assignment 2: Frontend (React & Redux)
+## Setup Instructions
 
-A modern and responsive fashion e-commerce website. Built with React, Redux Toolkit, and custom CSS (no external UI libraries).
+### Local Development
+```bash
+npm run dev  # Runs both frontend (port 3000) and backend (port 5000)
+```
 
-### Features
-- Product category browsing page.
-- Product search page.
-- Product details pages: select clothing size, add to cart, and quantity management.
-- Shopping cart page with quantity management.
+### Production Deployment
+```bash
+docker-compose up --build  # Containerized deployment on port 5000
+```
+Access the application:
+- Frontend: http://localhost:5000
+- Backend API: http://localhost:5000/api
 
-### Extra Features
-- Featured products component on home page.
-- Product only added to cart if size is selected (with corresponding notifications).
+## Tech Stack
 
-## Assignment 3: Full Stack (React, Redux, Express, MongoDB)
+### Frontend Stack
+- **React 19.1.0** - Component-based UI framework
+- **Redux Toolkit 2.8.2** - State management with modern Redux patterns
+- **React Router DOM 7.6.1** - Client-side routing and navigation
+- **Custom CSS** - Responsive design without external UI libraries
+- **Axios 1.10.0** - HTTP client for API communication
 
-A modern and responsive fashion e-commerce website. Built with React, Redux Toolkit, Express, MongoDB, and custom CSS (no external UI libraries).
+### Backend Stack
+- **Express.js 5.1.0** - Web application framework
+- **MongoDB** with **Mongoose 8.16.0** - NoSQL database with ODM
+- **JWT Authentication** - Secure user authentication with jsonwebtoken
+- **bcryptjs** - Password hashing and salting
+- **CORS** - Cross-origin resource sharing configuration
 
-### Features
-- Deployed as Docker container
-- MongoDB database
-- Product search page: search by clothing name, description, size, or category
-- Best sellers page
-- Checkout process
-- Admin page: shopping carts and orders lists
+### DevOps & Deployment
+- **Docker & Docker Compose** - Containerized deployment
+- **MongoDB Container** - Persistent database with health checks
+- **Environment Configuration** - Secure environment variable management
+- **Concurrent Development** - Frontend and backend development servers
 
-### Extra Features
-- User authentication: login/register (hashing and salting, JWT authentication)
+## Features
 
-## Docker Setup Instructions
+### User Experience
+- **Responsive Design** - Mobile-first approach with custom CSS
+- **Product Catalog** - Browse products by categories (T-Shirts & Tops, Pants & Jeans, Dresses & Skirts)
+- **Advanced Search** - Search by product name, description, size, or category
+- **Product Details** - Detailed product pages with size selection and quantity management
+- **Shopping Cart** - Add/remove items with real-time quantity updates
+- **Secure Checkout** - Complete order processing with user authentication
 
-### Running the Application
+### Authentication & User Management
+- **User Registration/Login** - Secure account creation with password hashing
+- **JWT Token Authentication** - Stateless authentication with secure tokens
+- **Protected Routes** - Role-based access control
+- **User Profile** - Order history and account management
 
-1. Clone the repository and navigate to the "Assignment 3" branch.
-2. Run the application using Docker Compose:
-   ```bash
-   # For first time or after code changes:
-   docker-compose up --build
-   
-   # For subsequent runs when no changes were made:
-   docker-compose up
-
-   # To stop the application:
-   docker-compose down
-   ```
-3. Access the application:
-   - Frontend: http://localhost:5000
-   - Backend API: http://localhost:5000/api
+### Administrative Features
+- **Admin Dashboard** - Administrative interface for order management
+- **Shopping Cart Analytics** - View all user shopping carts
+- **Order Management** - Complete order tracking and management system
