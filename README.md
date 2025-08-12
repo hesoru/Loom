@@ -1,8 +1,6 @@
-# Loom (Fashion E-commerce Platform)
+# Loom
 
-### A comprehensive full-stack fashion e-commerce website featuring a modern React frontend with Redux state management, Express.js backend API, and MongoDB database. Built entirely with custom CSS without external UI libraries.
-
-### By Helena Sokolovska
+A comprehensive full-stack fashion e-commerce website featuring a modern React frontend with Redux state management, Express.js backend API, and MongoDB database. Built entirely with custom CSS without external UI libraries.
 
 ## Setup Instructions
 
